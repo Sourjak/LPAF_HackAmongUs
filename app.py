@@ -10,7 +10,6 @@ from utils.qr_generator import generate_qr_code
 from utils.token_manager import generate_session_token, verify_session_token
 from utils.validator import is_ip_allowed
 from utils.report_generator import generate_report
-from utils.email_sender import send_email_with_report 
 
 app = Flask(__name__)
 
