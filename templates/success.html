@@ -3,24 +3,25 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Attendance Recorded — LPAF</title>
+<title>Attendance Recorded</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
   :root {
-    --cyan:         #00D4FF;
-    --blue:         #1A6BFF;
-    --green:        #00FF88;
-    --bg:           #060A14;
-    --card:         #0B1120;
-    --card-fill:    #0D1826;
-    --border:       rgba(0,212,255,0.08);
+    --cyan:       #00D4FF;
+    --blue:       #1A6BFF;
+    --green:      #00FF88;
+    --bg:         #060A14;
+    --card:       #0B1120;
+    --card-fill:  #0D1826;
+    --border:     rgba(0,212,255,0.08);
     --border-hover: rgba(0,212,255,0.20);
+    --border-focus: rgba(0,212,255,0.40);
     --text-primary:   #ffffff;
     --text-secondary: rgba(255,255,255,0.85);
     --text-muted:     rgba(255,255,255,0.38);
     --text-label:     rgba(0,212,255,0.60);
-    --glow-subtle:  0 0 20px rgba(0,212,255,0.15);
-    --glow-hover:   0 0 28px rgba(0,212,255,0.45);
+    --glow-subtle: 0 0 20px rgba(0,212,255,0.15);
+    --glow-hover:  0 0 28px rgba(0,212,255,0.45);
   }
 
   * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -60,10 +61,10 @@
     z-index: 2;
     animation: popIn 0.5s cubic-bezier(0.34,1.56,0.64,1) both;
     box-shadow: var(--glow-subtle), 0 24px 60px rgba(6,10,20,0.8);
+    /* Card top shimmer */
     background-image: linear-gradient(180deg, transparent, rgba(0,212,255,0.035) 40%, transparent);
   }
 
-  /* Icon */
   .icon-wrap {
     position: relative;
     width: 80px; height: 80px;
@@ -142,22 +143,9 @@
     box-shadow: 0 4px 16px rgba(0,212,255,0.2);
     transition: transform 0.15s, box-shadow 0.15s;
     animation: fadeUp 0.4s ease 0.8s both;
-    text-decoration: none;
-    display: flex; align-items: center; justify-content: center;
   }
   .btn:hover  { transform: translateY(-1px); box-shadow: var(--glow-hover); }
   .btn:active { transform: scale(0.98); }
-
-  /* Footer brand */
-  .brand {
-    margin-top: 28px;
-    font-size: 11px;
-    color: var(--text-label);
-    letter-spacing: 0.12em;
-    text-transform: uppercase;
-    animation: fadeUp 0.4s ease 0.9s both;
-    opacity: 0;
-  }
 
   @keyframes popIn {
     from { opacity: 0; transform: scale(0.75); }
@@ -197,51 +185,23 @@
       <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
     </div>
   </div>
-
   <h1>Attendance Recorded</h1>
   <p>Your presence has been verified and saved successfully.</p>
-
   <div class="meta">
-    <div class="meta-row">
-      <span>Status</span>
-      <span class="verified">✓ Verified</span>
-    </div>
-    
-   
-    <div class="meta-row">
-      <span>Time</span>
-      <span id="ts">—</span>
-    </div>
-
+    <div class="meta-row"><span>Status</span><span class="verified">✓ Verified</span></div>
+    <div class="meta-row"><span>Time</span><span id="ts">—</span></div>
+    <div class="meta-row"><span>Session</span><span id="sid">—</span></div>
   </div>
-
-  <a href="/" class="btn">Done</a>
-
-  <div class="brand">LPAF · Secure Attendance System</div>
+  <button class="btn" onclick="window.history.back()">Done</button>
 </div>
 
 <script>
-  // Timestamp
   const now = new Date();
   document.getElementById('ts').textContent =
     now.toLocaleDateString('en-IN', { day:'2-digit', month:'short', year:'numeric' }) + ', ' +
     now.toLocaleTimeString('en-IN', { hour:'2-digit', minute:'2-digit', hour12: true });
-
-  // Pull name/roll/session from URL params passed by Flask redirect if any,
-  // otherwise read from form data stored in sessionStorage
-  const params = new URLSearchParams(window.location.search);
-  const storedName = sessionStorage.getItem('lpaf_name') || params.get('name') || '—';
-  const storedRoll = sessionStorage.getItem('lpaf_roll') || params.get('roll') || '—';
-  const storedSid  = sessionStorage.getItem('lpaf_sid')  || params.get('session_id') || '—';
-
-  document.getElementById('student-name').textContent = storedName;
-  document.getElementById('student-roll').textContent = storedRoll;
-  document.getElementById('sid').textContent = storedSid !== '—' ? '#' + storedSid.toUpperCase() : '—';
-
-  // Clear after reading
-  sessionStorage.removeItem('lpaf_name');
-  sessionStorage.removeItem('lpaf_roll');
-  sessionStorage.removeItem('lpaf_sid');
+  document.getElementById('sid').textContent =
+    '#' + Math.random().toString(36).substring(2,8).toUpperCase();
 
   // Confetti — LPAF palette
   const canvas = document.getElementById('confetti');
@@ -249,8 +209,7 @@
   canvas.width = window.innerWidth;
   canvas.height = window.innerHeight;
 
-  const COLORS = ['#00D4FF','#1A6BFF','#00FF88','#ffffff',
-                  'rgba(0,212,255,0.6)','rgba(0,255,136,0.7)','rgba(26,107,255,0.8)'];
+  const COLORS = ['#00D4FF','#1A6BFF','#00FF88','#ffffff','rgba(0,212,255,0.6)','rgba(0,255,136,0.7)','rgba(26,107,255,0.8)'];
   const pieces = [];
   const cx = canvas.width / 2, cy = canvas.height / 2;
 
