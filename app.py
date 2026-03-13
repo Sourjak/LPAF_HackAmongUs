@@ -74,7 +74,7 @@ def professor():
         section = request.form.get("section", "").strip()
         department = request.form.get("department", "").strip()
         
-        # New: Capture Dynamic Duration (Default 300s)
+        # Capture Dynamic Duration (Default 300s)
         try:
             duration = int(request.form.get("duration", 300))
         except (ValueError, TypeError):
@@ -104,7 +104,7 @@ def professor():
             "allowed_network": allowed_network,
             "token": token,
             "start_time": time.time(),
-            "duration": duration # Added duration
+            "duration": duration 
         }
         active_sessions[session_id] = session_data
 
@@ -129,7 +129,7 @@ def refresh_qr(session_id):
 
     session = active_sessions[session_id]
 
-    # New Expiry Logic: Auto-send report and end session
+    # Expiry Logic: Auto-send report and end session
     if time.time() - session["start_time"] > session["duration"]:
         report_path = generate_report(
             session_id,
@@ -213,15 +213,31 @@ def download_report(session_id):
 @app.route("/student")
 def student():
     token = request.args.get("token")
+
     if not token:
         return "Invalid QR Code - Missing Token", 400
 
     decoded = verify_session_token(token)
+
     if not decoded:
         return "The QR link has expired or is invalid.", 401
 
     session_id = decoded["session_id"]
-    return render_template("student.html", token=token, session_id=session_id)
+    session = active_sessions.get(session_id)
+
+    if not session:
+        return "Session expired.", 400
+
+    # Calculate remaining time for the student's countdown
+    expiry_time = int(session["start_time"] + session["duration"] - time.time())
+
+    return render_template(
+        "student.html",
+        token=token,
+        session_id=session_id,
+        expiry_time=expiry_time,
+        location=session["allowed_network"]
+    )
 
 @app.route("/submit_attendance", methods=["POST"])
 def submit_attendance():
@@ -282,4 +298,6 @@ def submit_attendance():
 # Step 6: Run Server
 # -------------------------
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=5000)
+    # Dynamically pick the port from environment variables (important for Render/Heroku)
+    port = int(os.environ.get("PORT", 5000))
+    app.run(host="0.0.0.0", port=port)
