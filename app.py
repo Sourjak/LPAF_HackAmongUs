@@ -292,7 +292,13 @@ def submit_attendance():
     conn.commit()
     conn.close()
 
-    return render_template("success.html")
+    return jsonify({"redirect": f"/success?name={name}&roll={roll}"})
+
+@app.route("/success")
+def success():
+    name = request.args.get("name", "")
+    roll = request.args.get("roll", "")
+    return render_template("success.html", name=name, roll=roll)
 
 # -------------------------
 # Step 6: Run Server
