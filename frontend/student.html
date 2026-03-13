@@ -239,9 +239,9 @@ footer {
         <span id="errText">An error occurred.</span>
       </div>
 
-      <form method="POST" action="/submit_attendance" id="attendanceForm">
-        <input type="hidden" name="token" value="{{token}}">
-        <input type="hidden" name="device_id" id="device_id">
+      <form id="attendance-form">
+        <input type="hidden" id="token" value="{{ token }}">
+        <input type="hidden" id="device_id">
 
         <div style="display:flex;flex-direction:column;gap:1.1rem;">
 
@@ -254,7 +254,7 @@ footer {
               <div class="inp-icon">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
               </div>
-              <input name="name" type="text" class="inp" placeholder="Enter your full legal name" required autocomplete="off">
+              <input id="name" type="text" class="inp" placeholder="Your Name" required autocomplete="off">
             </div>
           </div>
 
@@ -267,7 +267,7 @@ footer {
               <div class="inp-icon">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v16"/></svg>
               </div>
-              <input name="roll" type="text" class="inp" placeholder="e.g. CS2023-001" required autocomplete="off">
+              <input id="roll" type="text" class="inp" placeholder="Roll Number" required autocomplete="off">
             </div>
           </div>
 
@@ -307,25 +307,11 @@ footer {
 
 <script>
 /* Device ID fingerprint */
-let deviceId = localStorage.getItem("lpaf_device_id");
-
-if (!deviceId) {
-  deviceId = (crypto.randomUUID)
-      ? crypto.randomUUID()
-      : Math.random().toString(36).substring(2);
-
-  localStorage.setItem("lpaf_device_id", deviceId);
-}
-
+let deviceId = localStorage.getItem("lpaf_device_id") || (crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).substring(2));
+localStorage.setItem("lpaf_device_id", deviceId);
 document.getElementById("device_id").value = deviceId;
 
-/* Inject Flask template values safely */
-const sessionExpiry = {{ expiry_time | default(0) }};
-const sessionLocation = "{{ location | default('') }}";
-const sessionToken = "{{ token | default('') }}";
-
-/* Form submission with AJAX (graceful fallback to POST) */
-const form = document.getElementById("attendanceForm");
+const form = document.getElementById("attendance-form");
 const submitBtn = document.getElementById("submitBtn");
 const errMsg = document.getElementById("errMsg");
 const errText = document.getElementById("errText");
@@ -333,8 +319,10 @@ const successCard = document.getElementById("successCard");
 
 form.addEventListener("submit", function(e) {
   e.preventDefault();
-  const name = form.querySelector("input[name='name']").value.trim();
-  const roll = form.querySelector("input[name='roll']").value.trim();
+  const name = document.getElementById("name").value.trim();
+  const roll = document.getElementById("roll").value.trim();
+  const token = document.getElementById("token").value;
+
   if (!name || !roll) { showErr("Please fill in all fields."); return; }
 
   submitBtn.disabled = true;
@@ -342,22 +330,21 @@ form.addEventListener("submit", function(e) {
     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="animation:spinSlash 1s linear infinite"><path d="M21 12a9 9 0 11-6.22-8.56"/></svg>
     Verifying...`;
 
-  const formData = new FormData(form);
+  const formData = new FormData();
+  formData.append('name', name);
+  formData.append('roll', roll);
+  formData.append('token', token);
+  formData.append('device_id', deviceId);
+
   fetch("/submit_attendance", { method:"POST", body: formData })
     .then(res => {
-      if (res.redirected) {
-         window.location.href = res.url;
-         return;
-      }
-      if (!res.ok) {
-        return res.text().then(t => { throw new Error(t || "Submission failed."); });
-      }
+      if (!res.ok) throw new Error("Submission failed.");
       return res.json();
     })
     .then(data => {
-      if (data && data.redirect) {
-         window.location.href = data.redirect;
-      }
+      form.style.display = "none";
+      successCard.style.display = "block";
+      document.getElementById("successName").innerText = name.toUpperCase() + " · " + roll.toUpperCase();
     })
     .catch(err => {
       submitBtn.disabled = false;
@@ -370,12 +357,6 @@ function showErr(msg) {
   errText.innerText = msg;
   errMsg.style.display = "flex";
   setTimeout(() => { errMsg.style.display = "none"; }, 5000);
-}
-
-function showSuccess(name, roll) {
-  form.style.display = "none";
-  successCard.style.display = "block";
-  document.getElementById("successName").innerText = name.toUpperCase() + " · " + roll.toUpperCase();
 }
 
 /* Scroll Progress Bar */
@@ -404,7 +385,6 @@ const pts = Array.from({length:55}, () => ({
   requestAnimationFrame(draw);
 })();
 
-/* Spin animation for loader */
 const styleSheet = document.createElement("style");
 styleSheet.innerText = "@keyframes spinSlash{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}";
 document.head.appendChild(styleSheet);
