@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Student Attendance</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+
+<body class="bg-[#0B0F1A] text-white flex items-center justify-center h-screen">
+
+    <div class="bg-gray-900 p-10 rounded-xl w-96">
+        <h2 class="text-2xl mb-6">Submit Attendance</h2>
+
+        <form method="POST" action="/submit_attendance">
+            <input type="hidden" name="token" value="{{token}}">
+            <input type="hidden" name="device_id" id="device_id">
+
+            <input name="name" placeholder="Your Name" 
+                   class="w-full p-3 mb-4 rounded text-black">
+
+            <input name="roll" placeholder="Roll Number" 
+                   class="w-full p-3 mb-6 rounded text-black">
+
+            <button class="bg-cyan-500 w-full py-3 rounded-lg font-bold hover:bg-cyan-600 transition-colors">
+                Submit Attendance
+            </button>
+        </form>
+    </div>
+
+    <script>
+        // Check for an existing device ID in local storage
+        let deviceId = localStorage.getItem("lpaf_device_id");
+
+        // If it doesn't exist, create a new UUID and save it
+        if (!deviceId) {
+            deviceId = crypto.randomUUID();
+            localStorage.setItem("lpaf_device_id", deviceId);
+        }
+
+        // Assign the device ID to the hidden input field for form submission
+        document.getElementById("device_id").value = deviceId;
+    </script>
+
+</body>
+</html>
