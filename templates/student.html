@@ -345,10 +345,18 @@ form.addEventListener("submit", function(e) {
   const formData = new FormData(form);
   fetch("/submit_attendance", { method:"POST", body: formData })
     .then(res => {
-      if (res.redirected || res.ok) {
-        showSuccess(name, roll);
-      } else {
+      if (res.redirected) {
+         window.location.href = res.url;
+         return;
+      }
+      if (!res.ok) {
         return res.text().then(t => { throw new Error(t || "Submission failed."); });
+      }
+      return res.json();
+    })
+    .then(data => {
+      if (data && data.redirect) {
+         window.location.href = data.redirect;
       }
     })
     .catch(err => {
