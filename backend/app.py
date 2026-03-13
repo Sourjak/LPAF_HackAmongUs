@@ -293,7 +293,7 @@ def submit_attendance():
     conn.commit()
     conn.close()
 
-    return jsonify({"redirect": f"/success?name={name}&roll={roll}"})
+    return jsonify({"redirect": f"https://lpaf-hack-among-us.vercel.app/success?name={name}&roll={roll}"})
 
 @app.route("/success")
 def success():
