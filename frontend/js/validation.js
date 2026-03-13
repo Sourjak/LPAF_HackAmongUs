@@ -23,7 +23,7 @@ document.addEventListener("DOMContentLoaded", () => {
         try {
 
             const response = await fetch(
-                "https://YOUR-RENDER-APP.onrender.com/submit_attendance",
+                "https://lpaf-hackamongus.onrender.com/submit_attendance",
                 {
                     method: "POST",
                     headers: {
