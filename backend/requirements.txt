@@ -1,0 +1,9 @@
+Flask
+gunicorn
+PyJWT
+pandas
+numpy
+openpyxl
+pillow
+qrcode
+python-dotenv
