@@ -10,8 +10,10 @@ from utils.qr_generator import generate_qr_code
 from utils.token_manager import generate_session_token, verify_session_token
 from utils.validator import is_ip_allowed
 from utils.report_generator import generate_report
+from flask_cors import CORS
 
 app = Flask(__name__)
+CORS(app)
 
 # -------------------------
 # Step 1: Configuration & Database Pathing
