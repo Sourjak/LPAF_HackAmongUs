@@ -137,7 +137,7 @@ def refresh_qr(session_id):
             session["department"],
             session["email"]
         )
-        send_email_with_report(session["email"], report_path)
+        print("Session expired. Report generated:", report_path)
         active_sessions.pop(session_id, None)
         return jsonify({"expired": True})
 
@@ -168,7 +168,7 @@ def end_session(session_id):
     )
 
     # Send email
-    send_email_with_report(session["email"], report_path)
+    print("Session ended. Report generated:", report_path)
 
     # Remove session
     active_sessions.pop(session_id, None)
