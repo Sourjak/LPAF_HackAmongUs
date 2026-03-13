@@ -24,7 +24,6 @@ body {
   color:white;
   overflow-x:hidden;
   min-height:100vh;
-  /* Simple default cursor restored here */
   cursor: default;
 }
 
@@ -366,7 +365,7 @@ function endSession(event) {
     const btn = event.target;
     btn.disabled = true;
     btn.innerText = "Processing...";
-    fetch(`/end_session/${sessionId}`)
+    fetch(`https://lpaf-hackamongus.onrender.com/end_session/${sessionId}`)
       .then(res => res.json())
       .then(data => { alert("Session Terminated."); location.reload(); })
       .catch(err => { console.error("Error:", err); btn.disabled = false; btn.innerText = "End Session Early"; });
@@ -378,7 +377,7 @@ function updateTimer() {
   const now = Date.now() / 1000;
   const remaining = duration - (now - sessionStart);
   if (remaining <= 0) {
-    fetch(`/end_session/${sessionId}`)
+    fetch(`https://lpaf-hackamongus.onrender.com/end_session/${sessionId}`)
       .then(res => res.json())
       .then(data => { alert("Session ended."); location.reload(); })
       .catch(err => { location.reload(); });
@@ -395,7 +394,7 @@ function updateTimer() {
 
 function refreshQR() {
   if (!sessionId) return;
-  fetch(`/refresh_qr/${sessionId}`)
+  fetch(`https://lpaf-hackamongus.onrender.com/refresh_qr/${sessionId}`)
     .then(res => res.json())
     .then(data => {
       if (data.expired) { alert("Session expired. Report sent to professor."); location.reload(); return; }
@@ -406,7 +405,7 @@ function refreshQR() {
 
 function updateStats() {
   if (!sessionId) return;
-  fetch(`/session_stats/${sessionId}`)
+  fetch(`https://lpaf-hackamongus.onrender.com/session_stats/${sessionId}`)
     .then(res => res.json())
     .then(data => {
       const count = data.count;
