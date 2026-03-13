@@ -59,7 +59,7 @@ active_sessions = {}
 # -------------------------
 # Step 2: Homepage Route
 # -------------------------
-@app.route("/")
+@app.route("/", methods=["GET", "HEAD"])
 def home():
     return render_template("index.html")
 
