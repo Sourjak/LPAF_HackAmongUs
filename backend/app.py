@@ -28,7 +28,6 @@ def init_db():
     """Ensures the local SQLite database directory and table are ready with Device ID migration."""
     os.makedirs(os.path.join(BASE_DIR, "database"), exist_ok=True)
     
-    # Using check_same_thread=False for SQLite concurrency
     conn = sqlite3.connect(DB_PATH, check_same_thread=False)
     cursor = conn.cursor()
     
@@ -75,7 +74,6 @@ def professor():
         section = request.form.get("section", "").strip()
         department = request.form.get("department", "").strip()
         
-        # Capture Dynamic Duration (Default 300s)
         try:
             duration = int(request.form.get("duration", 300))
         except (ValueError, TypeError):
@@ -93,7 +91,9 @@ def professor():
         allowed_network = str(network)
 
         token = generate_session_token(session_id)
-        student_link = request.host_url + f"student?token={token}"
+        
+        # FIX #1: Hardcoded Backend URL
+        student_link = f"https://lpaf-hackamongus.onrender.com/student?token={token}"
         qr_image = generate_qr_code(student_link)
 
         session_data = {
@@ -130,7 +130,6 @@ def refresh_qr(session_id):
 
     session = active_sessions[session_id]
 
-    # Expiry Logic: Auto-send report and end session
     if time.time() - session["start_time"] > session["duration"]:
         report_path = generate_report(
             session_id,
@@ -139,14 +138,14 @@ def refresh_qr(session_id):
             session["department"],
             session["email"]
         )
-        print("Session expired. Report generated:", report_path)
         active_sessions.pop(session_id, None)
         return jsonify({"expired": True})
 
     token = generate_session_token(session_id)
     session["token"] = token
 
-    student_link = request.host_url + f"student?token={token}"
+    # FIX #1: Hardcoded Backend URL
+    student_link = f"https://lpaf-hackamongus.onrender.com/student?token={token}"
     qr_image = generate_qr_code(student_link)
 
     return jsonify({
@@ -160,7 +159,6 @@ def end_session(session_id):
     if not session:
         return jsonify({"error": "Session not found"}), 404
 
-    # Generate report
     report_path = generate_report(
         session_id,
         session["section"],
@@ -169,10 +167,6 @@ def end_session(session_id):
         session["email"]
     )
 
-    # Send email
-    print("Session ended. Report generated:", report_path)
-
-    # Remove session
     active_sessions.pop(session_id, None)
     return jsonify({"status": "Session ended and report emailed"})
 
@@ -229,8 +223,8 @@ def student():
     if not session:
         return "Session expired.", 400
 
-    # Calculate remaining time for the student's countdown
-    expiry_time = int(session["start_time"] + session["duration"] - time.time())
+    # FIX #2: Prevent Negative Timer Crash
+    expiry_time = max(0, int(session["start_time"] + session["duration"] - time.time()))
 
     return render_template(
         "student.html",
@@ -293,6 +287,7 @@ def submit_attendance():
     conn.commit()
     conn.close()
 
+    # Note: Ensure this Vercel URL is correct for your frontend success page
     return jsonify({"redirect": f"https://lpaf-hack-among-us.vercel.app/success?name={name}&roll={roll}"})
 
 @app.route("/success")
@@ -305,6 +300,5 @@ def success():
 # Step 6: Run Server
 # -------------------------
 if __name__ == "__main__":
-    # Dynamically pick the port from environment variables (important for Render/Heroku)
     port = int(os.environ.get("PORT", 5000))
     app.run(host="0.0.0.0", port=port)
