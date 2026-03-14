@@ -62,7 +62,7 @@ active_sessions = {}
 # -------------------------
 @app.route("/", methods=["GET", "HEAD"])
 def home():
-    return render_template("index.html")
+    return "LPAF Backend Running"
 
 # -------------------------
 # Step 3: Professor Dashboard (Session Creation)
