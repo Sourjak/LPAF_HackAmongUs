@@ -239,7 +239,9 @@ footer {
         <span id="errText">An error occurred.</span>
       </div>
 
-      <form id="attendance-form">
+      <form id="attendance-form" action="/submit_attendance" method="POST" enctype="multipart/form-data">
+        <input type="hidden" name="lat" id="lat">
+        <input type="hidden" name="lon" id="lon">
         <input type="hidden" id="token" value="{{ token }}">
         <input type="hidden" id="device_id">
 
@@ -328,29 +330,44 @@ form.addEventListener("submit", function(e) {
   submitBtn.disabled = true;
   submitBtn.innerHTML = `
     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="animation:spinSlash 1s linear infinite"><path d="M21 12a9 9 0 11-6.22-8.56"/></svg>
-    Verifying...`;
+    Fetching GPS...`;
 
-  const formData = new FormData();
-  formData.append('name', name);
-  formData.append('roll', roll);
-  formData.append('token', token);
-  formData.append('device_id', deviceId);
+  navigator.geolocation.getCurrentPosition(function(position) {
+    document.getElementById("lat").value = position.coords.latitude;
+    document.getElementById("lon").value = position.coords.longitude;
+    
+    submitBtn.innerHTML = `
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="animation:spinSlash 1s linear infinite"><path d="M21 12a9 9 0 11-6.22-8.56"/></svg>
+      Verifying...`;
 
-  fetch("/submit_attendance", { method:"POST", body: formData })
-    .then(res => {
-      if (!res.ok) throw new Error("Submission failed.");
-      return res.json();
-    })
-    .then(data => {
-      form.style.display = "none";
-      successCard.style.display = "block";
-      document.getElementById("successName").innerText = name.toUpperCase() + " · " + roll.toUpperCase();
-    })
-    .catch(err => {
-      submitBtn.disabled = false;
-      submitBtn.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg> Submit Attendance`;
-      showErr(err.message || "Connection error. Please try again.");
-    });
+    const formData = new FormData();
+    formData.append('name', name);
+    formData.append('roll', roll);
+    formData.append('token', token);
+    formData.append('device_id', deviceId);
+    formData.append('lat', position.coords.latitude);
+    formData.append('lon', position.coords.longitude);
+
+    fetch("/submit_attendance", { method:"POST", body: formData })
+      .then(res => {
+        if (!res.ok) throw new Error("Submission failed.");
+        return res.json();
+      })
+      .then(data => {
+        form.style.display = "none";
+        successCard.style.display = "block";
+        document.getElementById("successName").innerText = name.toUpperCase() + " · " + roll.toUpperCase();
+      })
+      .catch(err => {
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg> Submit Attendance`;
+        showErr(err.message || "Connection error. Please try again.");
+      });
+  }, function(error) {
+    submitBtn.disabled = false;
+    submitBtn.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg> Submit Attendance`;
+    showErr("Location access required: " + error.message);
+  }, { enableHighAccuracy: true });
 });
 
 function showErr(msg) {
@@ -389,5 +406,6 @@ const styleSheet = document.createElement("style");
 styleSheet.innerText = "@keyframes spinSlash{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}";
 document.head.appendChild(styleSheet);
 </script>
+
 </body>
 </html>
