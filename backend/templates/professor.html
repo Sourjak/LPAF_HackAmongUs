@@ -316,7 +316,9 @@ select.inp option { background:#0B1120;color:white; }
           <span class="slabel" style="margin:0;">// Start New Session</span>
           <div style="flex:1;height:1px;background:linear-gradient(90deg,rgba(0,212,255,0.18),transparent);"></div>
         </div>
-        <form method="POST">
+        <form method="POST" enctype="multipart/form-data" id="prof-form">
+          <input type="hidden" name="lat" id="lat">
+          <input type="hidden" name="lon" id="lon">
           <div style="display:flex;flex-direction:column;gap:1rem;">
             <div>
               <label class="flabel">Professor Email</label>
@@ -343,6 +345,16 @@ select.inp option { background:#0B1120;color:white; }
                 <option value="120">2 Minutes</option>
                 <option value="300" selected>5 Minutes (Standard)</option>
               </select>
+            </div>
+            <div>
+              <label class="flabel">Professor Verification Selfie</label>
+              <input 
+                type="file"
+                name="photo"
+                accept="image/*"
+                capture="user"
+                class="inp"
+                required>
             </div>
             <button type="submit" class="btn-p" style="margin-top:0.5rem;">⬡ &nbsp;Generate Secure QR</button>
           </div>
@@ -457,6 +469,34 @@ const pts = Array.from({length:55}, () => ({
 window.addEventListener('scroll', () => {
   const h = document.documentElement;
   document.getElementById('sp').style.width = (h.scrollTop/(h.scrollHeight-h.clientHeight)*100)+'%';
+});
+</script>
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+  const form = document.getElementById("prof-form");
+  if (form) {
+    form.addEventListener("submit", function(e) {
+      if (!document.getElementById("lat").value || !document.getElementById("lon").value) {
+        e.preventDefault();
+        const btn = form.querySelector('button[type="submit"]');
+        const ogText = btn.innerHTML;
+        btn.innerHTML = "Fetching GPS...";
+        btn.disabled = true;
+        
+        navigator.geolocation.getCurrentPosition(function(position) {
+          document.getElementById("lat").value = position.coords.latitude;
+          document.getElementById("lon").value = position.coords.longitude;
+          btn.innerHTML = ogText;
+          btn.disabled = false;
+          form.submit();
+        }, function(error) {
+          alert("Please allow location access. Error: " + error.message);
+          btn.innerHTML = ogText;
+          btn.disabled = false;
+        }, { enableHighAccuracy: true });
+      }
+    });
+  }
 });
 </script>
 </body>
