@@ -6,6 +6,8 @@ import time
 import os
 
 # Custom utility imports
+from utils.exif_location import get_gps_from_image
+from utils.location_validator import is_within_radius
 from utils.qr_generator import generate_qr_code
 from utils.token_manager import generate_session_token, verify_session_token
 from utils.validator import is_ip_allowed
@@ -62,7 +64,7 @@ active_sessions = {}
 # -------------------------
 @app.route("/", methods=["GET", "HEAD"])
 def home():
-    return "LPAF Backend Running"
+    return render_template("index.html")
 
 # -------------------------
 # Step 3: Professor Dashboard (Session Creation)
@@ -74,6 +76,20 @@ def professor():
         subject = request.form.get("subject", "").strip()
         section = request.form.get("section", "").strip()
         department = request.form.get("department", "").strip()
+        photo = request.files.get("photo")
+        if not photo:
+            return "Professor selfie required", 400
+        os.makedirs("uploads", exist_ok=True)
+        photo_path = os.path.join("uploads", photo.filename)
+        photo.save(photo_path)
+        prof_lat = request.form.get("lat")
+        prof_lon = request.form.get("lon")
+
+        if not prof_lat or not prof_lon:
+            return "Professor location required", 400
+
+        prof_lat = float(prof_lat)
+        prof_lon = float(prof_lon)
         
         try:
             duration = int(request.form.get("duration", 300))
@@ -94,7 +110,7 @@ def professor():
         token = generate_session_token(session_id)
         
         # FIX #1: Hardcoded Backend URL
-        student_link = f"https://lpaf-hackamongus.onrender.com/student?token={token}"
+        student_link = request.host_url + f"student?token={token}"
         qr_image = generate_qr_code(student_link)
 
         session_data = {
@@ -106,7 +122,9 @@ def professor():
             "allowed_network": allowed_network,
             "token": token,
             "start_time": time.time(),
-            "duration": duration 
+            "duration": duration,
+            "prof_lat": prof_lat,
+            "prof_lon": prof_lon,
         }
         active_sessions[session_id] = session_data
 
@@ -241,7 +259,21 @@ def submit_attendance():
     roll = request.form.get("roll", "").strip().upper()
     token = request.form.get("token")
     device_id = request.form.get("device_id", "").strip()
+    photo = request.files.get("photo")
+    if not photo:
+        return "Student selfie required", 400
+    photo_path = os.path.join("uploads", photo.filename)
+    photo.save(photo_path)
+    
+    student_lat = request.form.get("lat")
+    student_lon = request.form.get("lon")
 
+    if not student_lat or not student_lon:
+        return "Location required", 400
+
+    student_lat = float(student_lat)
+    student_lon = float(student_lon)
+    
     if not token:
         return "Invalid request - Missing verification token.", 400
 
@@ -263,8 +295,16 @@ def submit_attendance():
     session = active_sessions.get(session_id)
     if not session:
         return "This attendance session is no longer active.", 400
-
     allowed_network = session["allowed_network"]
+    if not session:
+        return "This attendance session is no longer active.", 400
+    prof_lat = session["prof_lat"]
+    prof_lon = session["prof_lon"]
+    if not is_within_radius(prof_lat, prof_lon, student_lat, student_lon):
+        return "You are not inside the classroom location.", 403
+
+
+   
     if not is_ip_allowed(student_ip, allowed_network):
         return "You must be connected to the campus network to mark attendance.", 403
 
